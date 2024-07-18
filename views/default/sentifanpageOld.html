@@ -1,0 +1,25 @@
+{{extend 'layout.html'}}
+
+{{for post in posts:}}
+  <div class="container">
+    <div class="row center">
+        {{if post['picture'] is not None:}}
+            <img class="responsive-img" src="{{=post['picture']}}" />
+        {{pass}}
+      <div class="row">
+          {{if post['message'] is not None:}}
+            {{=post['message']}}
+          {{pass}}
+      </div>
+      <div class="row">
+          Postado em: {{=post['data']}}
+      </div>
+      <div class="row">
+        Positivos: {{=post['positivos']}}
+      </div>
+      <div class="row">
+        Negativos: {{=post['negativos']}}
+      </div>
+    </div>
+  </div>
+{{pass}}

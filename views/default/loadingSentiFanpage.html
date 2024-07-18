@@ -1,0 +1,12 @@
+{{extend 'layout.html'}}
+<h4>
+     Analisando Sentimentos de Comentários.
+</h4>
+<h6>
+    Por favor, aguarde mais um pouco...
+</h6>
+
+<img src="{{=URL('static', 'images/progress.gif')}}" style="width:304px;height:228px;">
+<script type="text/javascript">
+    window.location="{{=URL('default', 'sentifanpage', args=pageId)}}"
+</script>

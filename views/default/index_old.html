@@ -1,0 +1,78 @@
+{{extend 'layout.html'}}
+
+<div class="section no-pad-bot" id="index-banner">
+  <div class="container">
+    <br><br>
+    <br>
+    <h1 class="header center blue-text"><image class="responsive-img"  src="{{=URL('static', 'images/logo_bustrends.png')}}" /></h1>
+    <div class="row center">
+      <h5 class="header col s12 light">Um sistema de mapeamento de Opiniões em redes Sociais</h5>
+    </div>
+    <br><br>
+    <div class="row center">
+      <div class="header col s12 light">
+        <a href="{{=URL('default', 'twitter')}}"><img class="responsive-img" src="{{=URL('static', 'images/sign_inTwitter.png')}}" /></a>
+        <p>Ao clicar concordo com os <a href="{{=URL('default', 'termos')}}" target="_blank">Termos</a> e com a <a href="{{=URL('default', 'politicas')}}" target="_blank">Política de Privacidade</a></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="container">
+  <div class="video-container">
+    <iframe width="300" height="250" src="https://www.youtube.com/embed/B62OpeZ5_es" frameborder="0" allowfullscreen=0></iframe>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section">
+    <!--   Icon Section   -->
+    <div class="row">
+      <div class="col s12 m4">
+        <div class="icon-block">
+          <h2 class="center light-blue-text"><i class="material-icons">flash_on</i></h2>
+          <h5 class="center">Pesquisas Dinâmicas</h5>
+
+          <p class="light"></p>
+        </div>
+      </div>
+
+      <div class="col s12 m4">
+        <div class="icon-block">
+          <h2 class="center light-blue-text"><i class="material-icons">group</i></h2>
+          <h5 class="center">Analise de Sentimentos</h5>
+
+          <p class="light"></p>
+        </div>
+      </div>
+
+      <div class="col s12 m4">
+        <div class="icon-block">
+          <h2 class="center light-blue-text"><i class="material-icons">settings</i></h2>
+          <h5 class="center">Fácil de Usar</h5>
+
+          <p class="light">.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br><br>  
+</div>
+
+<div class="container">
+  <div class="col s12 m4 offset-m4">
+   <img style="height:120px;" src="{{=URL('static', 'images/Unova_ass_-_Geral.jpg')}}" alt="">
+  </div>
+</div>
+
+
+<!--Código do heatmap-->
+{{block page_js}}
+<script>
+(function(h,e,a,t,m,p) {
+m=e.createElement(a);m.async=!0;m.src=t;
+p=e.getElementsByTagName(a)[0];p.parentNode.insertBefore(m,p);
+})(window,document,'script','https://u.heatmap.it/log.js');
+</script>
+{{end}}

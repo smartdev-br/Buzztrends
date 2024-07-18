@@ -1,0 +1,48 @@
+
+<style>
+     html, body {
+       height: 100%;
+       margin: 0;
+       padding: 0;
+     }
+     #map {
+       height: 100%;
+       margin-left: auto;
+       margin-right: auto;
+     }
+#floating-panel {
+ position: absolute;
+ top: 10px;
+ left: 25%;
+ z-index: 5;
+ background-color: #fff;
+ padding: 5px;
+ border: 1px solid #999;
+ text-align: center;
+ font-family: 'Roboto','sans-serif';
+ line-height: 30px;
+ padding-left: 10px;
+}
+
+     #floating-panel {
+       background-color: #fff;
+       border: 1px solid #999;
+       left: 25%;
+       padding: 5px;
+       position: absolute;
+       top: 10px;
+       z-index: 5;
+     }
+   </style>
+
+<div id="floating-panel">
+      <button onclick="toggleHeatmap()">Toggle Heatmap</button>
+      <button onclick="changeGradient()">Change gradient</button>
+      <button onclick="changeRadius()">Change radius</button>
+      <button onclick="changeOpacity()">Change opacity</button>
+    </div>
+    <div id="map" style='width:100%;height:600px;'></div>
+    <script type='text/javascript' src='{{=URL("static", "js/sig.js")}}'></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYAUgTDkeGOP7ISwdTW6S6oqbkr-RixBo&signed_in=true&libraries=visualization&callback=initMap">
+    </script>

@@ -1,0 +1,114 @@
+{{extend 'layout.html'}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.min.js"></script>
+
+<div class="container">
+    <div class="row center">
+        <canvas id="canvas" height="450dp" width="400dp"></canvas>
+    </div>
+</div>
+
+<script>
+
+
+var data = {
+  labels: {{=[i + 1 for i in range(len(labels))]}},
+  datasets: [
+      {
+        type: 'bar',
+        label: 'Negativos',
+        backgroundColor: "rgba(250, 0, 0, 1)",
+        data: {{=dataN}},
+        borderColor: 'white'
+        },
+    {
+        type: 'bar',
+        label: 'Positivos',
+        backgroundColor: "rgba(0, 250, 0, 1)",
+        data: {{=dataP}},
+        borderColor: 'white'
+    },
+    ]
+}
+
+var ctx = document.getElementById("canvas").getContext("2d");
+mychart = new Chart(ctx, {
+  type: 'bar',
+  data: data,
+  options: {
+    legend: {
+      position: 'bottom'
+    },
+    tooltips: {
+      mode: 'label'
+    },
+    responsive: true,
+    scales: {
+      xAxes: [{
+        stacked: true,
+        position: 'top',
+        display: true,
+        ticks: {
+          beginAtZero: true
+        }
+      }],
+      yAxes: [{
+        stacked: false,
+				ticks: {
+          suggestedMax: 5,
+          beginAtZero: true,
+          callback: function(value) {
+            return Number(value).toFixed(0);
+          }
+        }
+      }]
+    }
+  }
+});
+
+</script>
+
+<div class="container center-align">
+    {{i=0}}
+    {{for post in posts:}}
+    {{i += 1}}
+
+        <div class="row center">
+            <div class='col s12 m7'>
+                <div class="card">
+                    {{if post['picture'] is not None:}}
+                        <div class="card-image">
+                            <img class="activator"  src="{{=post['picture']}}" />
+                        </div>
+                    {{pass}}
+                    <div class="card-content">
+                        <span class="card-title activator grey-text text-darken-4">
+                            Barra: {{=i}}
+                            <i class="material-icons right">more_vert</i>
+                        </span>
+                        <br>
+                        {{if post['message'] is not None:}}
+                            <p>{{=post['message']}}</p>
+                        {{pass}}
+                    </div>
+                    <div class="card-reveal">
+                        <span class="card-title grey-text text-darken-4">
+                            Barra: {{=i}}
+                            <i class="material-icons right">close</i>
+                        </span>
+                        <br>
+                      <div class="row">
+                          Postado em: {{=post['data']}}
+                      </div>
+                      <div class="row">
+                        Positivos: {{=post['positivos']}}
+                      </div>
+                      <div class="row">
+                        Negativos: {{=post['negativos']}}
+                      </div>
+                  </div>
+              </div>
+            </div>
+        </div>
+
+    {{pass}}
+</div>

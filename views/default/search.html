@@ -1,0 +1,495 @@
+{{extend 'layout.html'}}
+<div class="container">
+  <br>
+  <div class="row">
+    <div class='col s1'>
+      <img src='{{=imageUser}}' />
+    </div>
+  </div>
+  <div class="row">
+    <div class='col s10'>
+      <h5> Bem vindo {{=userName}}</h5>
+    </div>
+  </div>
+
+  <div class='col s10'>
+    <p>{{=T('Escolha a localização, e em seguida clique no mapa para determinar a área de interesse!')}}</p>
+  </div>
+
+  <!--####################MAPA#######################################################-->
+    
+  <style>
+      #map_canvas {
+        width: 100%; 
+        padding-bottom: 65%;
+        margin-left:auto;
+        margin-right:auto;
+      }
+      .controls {
+        margin-top: 40px;
+        border: 1px solid transparent;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        height: 32px;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      }
+      #pac-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-top: 10px;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 50%;
+      }
+
+      #pac-input:focus {
+        border-color: #4d90fe;
+      }
+
+      .pac-container {
+        font-family: Roboto;
+      }
+  </style>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCosQGUZH6EnxR9n37vZEBQi6OSC2uNGXo&v=3.exp&libraries=places"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <br>
+  <input id="pac-input" class="controls" type="text"
+            placeholder="{{=T('Encontrar Localização')}}">
+  <div  class='container' style="visibility: hidden">
+    <input type="radio" name="type" id="changetype-all" checked="checked">
+    <label for="changetype-all">{{=T('Tudo')}}</label>
+    <input type="radio" name="type" id="changetype-establishment">
+    <label for="changetype-establishment">{{=T('Estabelecimento')}}</label>
+    <input type="radio" name="type" id="changetype-address">
+    <label for="changetype-address">{{=T('Endereço')}}</label>
+    <input type="radio" name="type" id="changetype-geocode">
+    <label for="changetype-geocode">{{=T('Geocode')}}</label>
+  </div>
+
+  <div id="map_canvas"></div>
+  <br>
+<script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+  <br>
+  <script type="text/javascript">
+    var map;
+    var shape;
+    var markers = [];
+    var circles = [];
+    var poly;
+    var currentZoom = {{=zoom}};
+    var path = new google.maps.MVCArray;
+    var infoWindow;
+
+
+    google.load('visualization', '1', {
+      packages: ['corechart']
+    });
+
+    function ChartMarker(options) {
+      this.setValues(options);
+
+      this.$inner = $('<div>').css({
+        position: 'relative',
+        left: '-50%',
+        top: '-50%',
+        width: options.width,
+        height: options.height,
+        fontSize: '1px',
+        lineHeight: '1px',
+        backgroundColor: 'transparent',
+        cursor: 'default'
+      });
+
+      this.$div = $('<div>')
+        .append(this.$inner)
+        .css({
+          position: 'absolute',
+          display: 'none'
+        });
+    };
+
+    ChartMarker.prototype = new google.maps.OverlayView;
+
+    ChartMarker.prototype.onAdd = function() {
+      $(this.getPanes().overlayMouseTarget).append(this.$div);
+    };
+
+    ChartMarker.prototype.onRemove = function() {
+      this.$div.remove();
+    };
+
+    ChartMarker.prototype.draw = function() {
+      var marker = this;
+      var projection = this.getProjection();
+      var position = projection.fromLatLngToDivPixel(this.get('position'));
+
+      this.$div.css({
+        left: position.x,
+        top: position.y,
+        display: 'block'
+      })
+
+      this.$inner
+        .html('<img src="' + this.get('image') + '"/>')
+        .click(function(event) {
+          var events = marker.get('events');
+          events && events.click(event);
+        });
+
+      this.chart = new google.visualization.PieChart(this.$inner[0]);
+      this.chart.draw(this.get('chartData'), this.get('chartOptions'));
+    };
+
+    function updateCircle(c){
+      google.maps.event.addListener(c, 'radius_changed', function() {
+          setCirclePropForm(c);
+      });
+    }
+
+    function setCirclePropForm(circle){
+      var circCenter = circle.getCenter();
+
+      document.getElementById('lat').value =  circCenter.lat();
+      document.getElementById('lng').value =  circCenter.lng();
+      document.getElementById('raio').value = '' + circle.getRadius();
+      document.getElementById('zoom').value = '' +  map.getZoom();
+    }
+
+    // Cria Circulos a partir de um ponto
+
+    function addPoint(event) {
+          if(markers.length == 1){
+            markers[0].setMap(null);
+            circles[0].setMap(null);
+            markers = [];
+            circles = [];
+
+          }
+          var marker = new google.maps.Marker({
+            position: event.latLng,
+            map: map,
+            draggable: true
+          });
+          markers.push(marker);
+
+          if(map.getZoom() >= 13){
+            var zz = map.getZoom();
+            rd = 30000000 * Math.exp(- 0.7 * zz);
+          }
+          else{
+            var xz = 90000;
+            var az = -(xz - 500) /  10;
+            var bz = 500 - 13 * az;
+            var rd = az * map.getZoom() +bz;
+          }
+
+          // Add circle overlay and bind to marker
+          var circle = new google.maps.Circle({
+            map: map,
+            radius:rd ,    // 10 miles in metres
+            fillColor: '#AA0000',
+            editable: true
+          });
+          circle.bindTo('center', marker, 'position');
+          circles.push(circle);
+
+          setCirclePropForm(circle);
+          updateCircle(circle);
+    }
+
+    // Removes the markers from the map, but keeps them in the array.
+
+    function clearMarkers() {
+      setAllMap(null);
+    }
+
+    //Deletes all markers in the array by removing references to them.
+
+    function deleteMarkers() {
+      clearMarkers();
+      markers = [];
+      path = new google.maps.MVCArray;
+      markers = new Array();
+      pathroute = new Array();
+      poly.setPaths(new google.maps.MVCArray([path]));
+
+    }
+
+
+    function initialize() {
+
+      {{if latlon is False:}}
+        var latLng = new new google.maps.LatLng(-23.17, -45.87);
+      {{else:}}
+        var latLng = new google.maps.LatLng({{=latlon[0]}}, {{=latlon[1]}});
+      {{pass}}
+
+        map = new google.maps.Map($('#map_canvas')[0], {
+          zoom: currentZoom,
+          center: latLng,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeControl: false, /*esconde a opção de mudar o tipo de mapa*/
+          streetViewControl: false, /*esconde a opção de streetview*/
+        });
+
+        /*
+        // Creating polygon
+        poly = new google.maps.Polygon({
+            strokeWeight: 3,
+            fillColor: '#5555FF'
+        });
+        poly.setMap(map);
+        poly.setPaths(new google.maps.MVCArray([path]));
+        google.maps.event.addListener(poly, 'click', showArrays);
+        infoWindow = new google.maps.InfoWindow();
+        */
+
+
+        /* Search Box*/
+
+        var input = /** @type {!HTMLInputElement} */(
+        document.getElementById('pac-input'));
+    
+    var types = document.getElementById('type-selector');
+    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    map.controls[google.maps.ControlPosition.TOP_LEFT].push(types);
+    
+
+    var autocomplete = new google.maps.places.Autocomplete(input);
+    autocomplete.bindTo('bounds', map);
+
+    var infowindow = new google.maps.InfoWindow();
+    var marker = new google.maps.Marker({
+      map: map,
+      anchorPoint: new google.maps.Point(0, -29)
+    });
+
+    google.maps.event.addListener(map, 'click', addPoint);
+
+    autocomplete.addListener('place_changed', function() {
+      infowindow.close();
+      marker.setVisible(false);
+      var place = autocomplete.getPlace();
+      if (!place.geometry) {
+        window.alert("Autocomplete's returned place contains no geometry");
+        return;
+      }
+
+      // If the place has a geometry, then present it on a map.
+      if (place.geometry.viewport) {
+        map.fitBounds(place.geometry.viewport);
+      } else {
+        map.setCenter(place.geometry.location);
+        map.setZoom(17);  // Why 17? Because it looks good.
+      }
+      marker.setIcon(/** @type {google.maps.Icon} */({
+        url: place.icon,
+        size: new google.maps.Size(71, 71),
+        origin: new google.maps.Point(0, 0),
+        anchor: new google.maps.Point(17, 34),
+        scaledSize: new google.maps.Size(35, 35)
+      }));
+      marker.setPosition(place.geometry.location);
+      marker.setVisible(true);
+
+
+      var address = '';
+      if (place.address_components) {
+        address = [
+          (place.address_components[0] && place.address_components[0].short_name || ''),
+          (place.address_components[1] && place.address_components[1].short_name || ''),
+          (place.address_components[2] && place.address_components[2].short_name || '')
+        ].join(' ');
+      }
+
+      infowindow.setContent('<div><strong>' + place.name + '</strong><br>' + address);
+      infowindow.open(map, marker);
+    });
+
+    // Sets a listener on a radio button to change the filter type on Places
+    // Autocomplete.
+    function setupClickListener(id, types) {
+      var radioButton = document.getElementById(id);
+      radioButton.addEventListener('click', function() {
+        autocomplete.setTypes(types);
+      });
+    }
+
+    setupClickListener('changetype-all', []);
+    setupClickListener('changetype-address', ['address']);
+    setupClickListener('changetype-establishment', ['establishment']);
+    setupClickListener('changetype-geocode', ['geocode']);
+
+
+
+        /* End Search Box */
+
+        var data = google.visualization.arrayToDataTable([
+          ['Sentimento', 'Total'],
+          ['Positivo', {{=total[0]}}],
+          ['Negativo', {{=total[1]}}],
+        ]);
+
+        var options = {
+          fontSize: 8,
+          backgroundColor: 'transparent',
+          legend: 'none'
+        };
+
+        var marker2 = new ChartMarker({
+          map: map,
+          position: latLng,
+          width: '120px',
+          height: '120px',
+          chartData: data,
+          chartOptions: options,
+          events: {
+            click: function(event) {
+            }
+          }
+        });
+      };
+
+    $(initialize);
+  </script>
+  <!--####################NUVEM DE TAGS #####################################-->
+  {{if forWordCloud is not None:}}
+  <style type="text/css">
+  .wordcloud {
+
+    width: 90%;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 5px;
+    padding: 5px;
+
+  }
+  </style>
+  <div class='row'>
+    <div class='col s6 blue lighten-2'>
+      <div id="sourrounding_div" class="wordcloud">
+        <canvas id="canvas_cloud"></canvas>
+      </div>
+    </div>
+    <div class='col s6 red accent-4'>
+      <div id="sourrounding_div2" class="wordcloud">
+        <canvas id="canvas_cloud2"></canvas>
+      </div>
+    </div>
+  </div>
+    <script src="{{=URL('static', 'js/wordcloud2.js')}}"></script>
+    <script type='text/javascript'>
+        var div = document.getElementById("sourrounding_div");
+
+        var canvas = document.getElementById("canvas_cloud");
+
+        canvas.height = div.offsetHeight;
+
+        canvas.width  = div.offsetWidth;
+        var div2 = document.getElementById("sourrounding_div2");
+
+        var canvas2 = document.getElementById("canvas_cloud2");
+        canvas2.height = div2.offsetHeight;
+
+        canvas2.width  = div2.offsetWidth;
+
+        var options = {list : [
+            {{for word, weight in forWordCloud[0].iteritems():}}
+              ["{{=word}}", "{{=50 * float(weight)}}"],
+            {{pass}}
+          ]};
+
+        var options2 = {list : [
+              {{for word, weight in forWordCloud[1].iteritems():}}
+                ["{{=word}}", "{{=50 * float(weight)}}"],
+              {{pass}}
+            ]};
+
+        WordCloud(document.getElementById('canvas_cloud'), options);
+        WordCloud(document.getElementById('canvas_cloud2'), options2);
+      </script>
+
+  {{pass}}
+  <br>
+  <br>
+<!--####################FORMULÁRIO DE PESQUISA#####################################-->
+    <div class="row">
+      <div class='col s12'>
+        <div class='row'>
+          {{=form.custom.begin}}
+          <div class='row'>
+            <div class='input-field col s10'>
+              {{form.elements('#no_table_search')[0]['_placeholder']='Digite o termo a ser pesquisado'}}
+              {{=form.custom.widget.search}}
+              <label for="search"><i class="material-icons">search</i></label>
+            </div>
+            <div class='input-field col s2'>
+              <button class="btn-floating waves-effect waves-light btn-small blue" type="submit" name="">
+                <i class="material-icons center">search</i>
+              </button>
+            </div>
+          </div>
+          <div class='row'>
+            <div class='input-field col s2'>
+              {{=form.custom.widget.lat}}
+              <!--label for="lat">{{=T('Lat')}}</label-->
+            </div>
+            <div class='input-field col s2'>
+              {{=form.custom.widget.lng}}
+              <!--label for="lng">{{=T('Long')}}</label-->
+            </div>
+            <div class='input-field col s2'>
+              {{=form.custom.widget.raio}}
+              <!--label for="raio">{{=T('Raio')}}</label-->
+            </div>
+          </div>
+        {{=form.custom.widget.zoom}}
+          {{=form.custom.end}}
+          <!-- Switch -->
+        </div>
+      </div>
+    </div>
+</div>
+<!--Código do heatmap-->
+{{block page_js}}
+<script>
+(function(h,e,a,t,m,p) {
+m=e.createElement(a);m.async=!0;m.src=t;
+p=e.getElementsByTagName(a)[0];p.parentNode.insertBefore(m,p);
+})(window,document,'script','https://u.heatmap.it/log.js');
+</script>
+{{end}}
+
+
+<h1>Tweets Positivos</h1>
+
+{{if len(posTW) > 0:}}
+    {{for id in posTW:}}
+        <blockquote class="twitter-tweet" lang="pt">
+            <p>
+                <a href="https://twitter.com/twitterapi/status/{{=id}}"></a>
+            </p>
+        </blockquote>
+    {{pass}}
+{{pass}}
+
+<h1>Tweets Negativos</h1>
+
+{{if len(negTW) > 0:}}
+    {{for id in negTW:}}
+        <blockquote class="twitter-tweet" lang="pt">
+            <p>
+                <a href="https://twitter.com/twitterapi/status/{{=id}}"></a>
+            </p>
+        </blockquote>
+    {{pass}}
+{{pass}}
+

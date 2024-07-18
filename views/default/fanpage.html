@@ -1,0 +1,52 @@
+{{extend 'layout.html'}}
+<div class="row">
+  <div class='col s12 offset-s2'>
+    <div class='row'>
+      {{=form.custom.begin}}
+      <div class='row'>
+        <div class='input-field col s6'>
+          {{=form.custom.widget.search}}
+          <label for="search"><i class="material-icons">search</i></label>
+        </div>
+        <div class='input-field col s6'>
+          <button class="btn-floating waves-effect waves-light btn-small blue" type="submit" name="">
+            <i class="material-icons center">search</i>
+          </button>
+        </div>
+      </div>
+      {{=form.custom.end}}
+    </div>
+  </div>
+</div>
+
+{{for p in pages:}}
+  <div class="container">
+    <div class="row center">
+      <a href="{{=p['link']}}" target="_blank">
+        <img class="responsive-img" src="{{=p['picture']['data']['url']}}" />
+      </a>
+      <div class="row">
+        {{if 'about' in p.keys():}}
+          <div class='row'>
+            Sobre: {{=p['about']}}
+          </div>
+          {{pass}}
+        {{if 'description' in p.keys():}}
+          <div class='row'>
+            Descrição: {{=p['description']}}
+          </div>
+        {{pass}}
+        <div class='row'>
+          Curtidas na página: {{=p['engagement']['count']}}
+        </div>
+        <div class='row'>
+          <a class='waves-effect waves-light btn'
+            href="{{=URL('default', 'loadingSentiFanpage', args=[p['id']])}}"
+          >
+            Sentimentos
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{{pass}}
